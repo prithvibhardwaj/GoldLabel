@@ -7,6 +7,7 @@ import {
   getIcon,
   type OptionSelection,
 } from "./PictogramData";
+import { PillIcon } from "./CustomIcons";
 
 
 export function PrintPreview() {
@@ -16,7 +17,7 @@ export function PrintPreview() {
 
   const {
     timeSelections = { morning: "v0" } as Record<string, string>,
-    dosageText = "3 pills each time",
+    pillCount = 1,
     howToTakeSelection = { optionId: "crush", variantId: "v0" } as OptionSelection,
     sideEffectSelection = { optionId: "drowsiness", variantId: "v0" } as OptionSelection,
     howLong = "",
@@ -52,11 +53,16 @@ export function PrintPreview() {
   }
 
   if (inc("dosage")) {
+    const pillSize = pillCount > 5 ? 16 : pillCount > 3 ? 20 : 26;
     sections.push({
       key: "dosage",
       label: "Dosage",
       content: (
-        <p className="text-[11px] font-bold text-[#1B3022] leading-tight text-center">{dosageText}</p>
+        <div className="flex items-center justify-center gap-0.5 flex-wrap">
+          {Array.from({ length: pillCount }).map((_, i) => (
+            <PillIcon key={i} size={pillSize} />
+          ))}
+        </div>
       ),
     });
   }

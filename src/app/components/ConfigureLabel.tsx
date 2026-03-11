@@ -203,19 +203,26 @@ export function ConfigureLabel() {
 
   const {
     language = "en",
-    dosage: ocrDosage = "3 pills each time",
+    dosage: ocrDosage = "1",
     howLong = "",
     others = "",
     includeOnLabel = {},
   } = location.state || {};
+
+  // Parse a pill count from OCR dosage string (e.g. "3 pills each time" → 3)
+  const parseCount = (text: string) => {
+    const match = String(text).match(/\d+/);
+    const n = match ? parseInt(match[0], 10) : 1;
+    return Math.min(Math.max(1, n), 10);
+  };
 
   // Multi-select time: { optionId: variantId }
   const [timeSelections, setTimeSelections] = useState<Record<string, string>>({ morning: "v0" });
   // Single-select: { optionId, variantId }
   const [howToTakeSelection, setHowToTakeSelection] = useState<OptionSelection>({ optionId: "crush", variantId: "v0" });
   const [sideEffectSelection, setSideEffectSelection] = useState<OptionSelection>({ optionId: "drowsiness", variantId: "v0" });
-  // Dosage text
-  const [dosageText, setDosageText] = useState(ocrDosage);
+  // Dosage: number of pills
+  const [pillCount, setPillCount] = useState(parseCount(ocrDosage));
   // Which category accordion is open
   const [activeCategory, setActiveCategory] = useState<string | null>("time");
 
@@ -241,7 +248,7 @@ export function ConfigureLabel() {
     navigate(`/print-preview/${id || "1"}`, {
       state: {
         timeSelections,
-        dosageText,
+        pillCount,
         howToTakeSelection,
         sideEffectSelection,
         language,
@@ -279,7 +286,7 @@ export function ConfigureLabel() {
       id: "dosage",
       includeKey: "dosage",
       label: "Dosage",
-      subtitle: dosageText || "Verify dosage",
+      subtitle: `${pillCount} pill${pillCount !== 1 ? "s" : ""} per dose`,
       previewIcon: <PillIcon size={40} />,
     },
     {
@@ -375,15 +382,22 @@ export function ConfigureLabel() {
 
                   {cat.id === "dosage" && (
                     <div className="bg-white/80 rounded-[16px] p-5 glass-shadow">
-                      <p className="serif text-[15px] font-bold text-[#1B3022] mb-3">Verify Dosage</p>
-                      <input
-                        type="text"
-                        value={dosageText}
-                        onChange={(e) => setDosageText(e.target.value)}
+                      <p className="serif text-[15px] font-bold text-[#1B3022] mb-3">Pills per dose</p>
+                      <select
+                        value={pillCount}
+                        onChange={(e) => setPillCount(Number(e.target.value))}
                         className="w-full bg-[#F5F2ED] border-[2px] border-[#1B3022]/15 focus:border-[#1B3022] focus:outline-none rounded-[12px] px-4 py-3 text-xl font-semibold text-[#1B3022] transition-all"
                         style={{ minHeight: "54px" }}
-                      />
-                      <p className="text-[13px] text-[#1B3022]/45 mt-2">Edit if OCR extracted incorrectly</p>
+                      >
+                        {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                          <option key={n} value={n}>{n} pill{n !== 1 ? "s" : ""}</option>
+                        ))}
+                      </select>
+                      <div className="flex items-center justify-center gap-1 mt-4 flex-wrap">
+                        {Array.from({ length: pillCount }).map((_, i) => (
+                          <PillIcon key={i} size={pillCount > 5 ? 24 : pillCount > 3 ? 30 : 38} />
+                        ))}
+                      </div>
                     </div>
                   )}
 
