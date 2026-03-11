@@ -41,6 +41,7 @@ body {
   min-height: 100dvh;
   position: relative;
   overflow-x: hidden;
+  zoom: 0.75;
 }
 
 /* Scrollbar hide utility */

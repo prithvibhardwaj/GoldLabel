@@ -7,6 +7,10 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      document.addEventListener('wheel', function(e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+      document.addEventListener('keydown', function(e) { if (e.ctrlKey && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault(); });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
