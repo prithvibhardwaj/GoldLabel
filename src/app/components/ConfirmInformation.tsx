@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Check } from "lucide-react";
 
 type FieldType = "pictogram" | "text";
 
@@ -25,7 +25,7 @@ const FIELDS: Field[] = [
     defaultValue: "",
     placeholder: "Any other meaningful notes…",
     type: "text",
-    description: "Any extracted text that doesn't fall into the 5 categories above but is still meaningful — excludes junk like clinic address, medication name, or dispensary info. Auto-populated by OCR.",
+    description: "Any extracted text that doesn't fall into the 5 categories above but is still meaningful.",
   },
 ];
 
@@ -77,12 +77,23 @@ export function ConfirmInformation() {
     Object.fromEntries(FIELDS.map((f) => [f.key, true]))
   );
 
+  // Track which fields are currently being edited
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const toggleInclude = (key: string) => {
     setIncludeOnLabel((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleEdit = (key: string) => {
+    setEditingFields((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const confirmEdit = (key: string) => {
+    setEditingFields((prev) => ({ ...prev, [key]: false }));
   };
 
   const handleNext = () => {
@@ -106,23 +117,27 @@ export function ConfirmInformation() {
           </h1>
         </div>
         <p className="text-[15px] text-[#1B3022]/55 tracking-wide ml-[60px]">
-          Review extracted details and choose what appears on the label
+          OCR has read your label — tap <span className="font-semibold text-[#1B3022]/70">Edit</span> on any field to correct a mistake
         </p>
       </header>
 
       {/* Scrollable form */}
-      <main className="flex-1 px-6 py-4 pb-36 overflow-y-auto space-y-5">
+      <main className="flex-1 px-6 py-4 pb-36 overflow-y-auto space-y-4">
         {FIELDS.map((field) => {
           const included = includeOnLabel[field.key];
+          const isEditing = editingFields[field.key] ?? false;
+          const value = formData[field.key];
+          const isEmpty = !value || value.trim().length === 0;
+
           return (
             <div
               key={field.key}
               className={`bg-white/70 backdrop-blur-sm rounded-[18px] px-5 py-4 glass-shadow transition-opacity ${
-                included ? "opacity-100" : "opacity-60"
+                included ? "opacity-100" : "opacity-55"
               }`}
             >
-              {/* Label row */}
-              <div className="flex items-center gap-2 mb-2">
+              {/* Label row with type tag + edit button */}
+              <div className="flex items-center gap-2 mb-3">
                 <label
                   htmlFor={field.key}
                   className="serif text-lg font-bold text-[#1B3022] flex-1"
@@ -130,6 +145,22 @@ export function ConfirmInformation() {
                   {field.label}
                 </label>
                 <TypeTag type={field.type} />
+                {/* Edit / Confirm button */}
+                <button
+                  onClick={() => isEditing ? confirmEdit(field.key) : toggleEdit(field.key)}
+                  disabled={!included}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-[13px] font-semibold transition-all disabled:opacity-40 ${
+                    isEditing
+                      ? "bg-[#1B3022] text-white"
+                      : "bg-[#1B3022]/10 text-[#1B3022]/70 hover:bg-[#1B3022]/20"
+                  }`}
+                  aria-label={isEditing ? `Confirm ${field.label}` : `Edit ${field.label}`}
+                >
+                  {isEditing
+                    ? <><Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Done</>
+                    : <><Pencil className="w-3 h-3" strokeWidth={2.5} /> Edit</>
+                  }
+                </button>
               </div>
 
               {/* Description for Others */}
@@ -139,18 +170,31 @@ export function ConfirmInformation() {
                 </p>
               )}
 
-              {/* Input */}
-              <input
-                id={field.key}
-                type="text"
-                value={formData[field.key]}
-                onChange={(e) => handleChange(field.key, e.target.value)}
-                placeholder={field.placeholder}
-                disabled={!included}
-                className="w-full bg-[#F5F2ED] border-[2px] border-[#1B3022]/15 focus:border-[#1B3022] focus:outline-none rounded-[12px] px-4 py-3 text-xl text-[#1B3022] transition-all disabled:cursor-not-allowed"
-                style={{ minHeight: "54px" }}
-                aria-label={field.label}
-              />
+              {/* Read-only display or editable input */}
+              {isEditing ? (
+                <input
+                  id={field.key}
+                  type="text"
+                  value={value}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  placeholder={field.placeholder}
+                  autoFocus
+                  className="w-full bg-[#F5F2ED] border-[2px] border-[#1B3022] focus:outline-none rounded-[12px] px-4 py-3 text-xl text-[#1B3022] transition-all"
+                  style={{ minHeight: "54px" }}
+                  aria-label={field.label}
+                />
+              ) : (
+                <div
+                  className={`rounded-[12px] px-4 py-3 ${isEmpty ? "bg-[#1B3022]/5" : "bg-[#F5F2ED]"}`}
+                  style={{ minHeight: "54px" }}
+                >
+                  {isEmpty ? (
+                    <p className="text-[17px] text-[#1B3022]/35 italic">{field.placeholder}</p>
+                  ) : (
+                    <p className="text-xl font-semibold text-[#1B3022]">{value}</p>
+                  )}
+                </div>
+              )}
 
               {/* Include on label toggle */}
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#1B3022]/10">

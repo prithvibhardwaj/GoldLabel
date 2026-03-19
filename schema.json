@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goldlabel.app/schema.json",
+  "title": "GoldLabel App Schema",
+  "description": "Comprehensive data schema for the GoldLabel medicine label generation app",
+
+  "$defs": {
+
+    "Language": {
+      "title": "Language",
+      "description": "Supported label languages",
+      "type": "string",
+      "enum": ["en", "ta", "zh", "hi", "ms"],
+      "enumDescriptions": {
+        "en": "English",
+        "ta": "Tamil (தமிழ்)",
+        "zh": "Mandarin (中文)",
+        "hi": "Hindi (हिन्दी)",
+        "ms": "Malay (Bahasa Melayu)"
+      }
+    },
+
+    "FieldType": {
+      "title": "FieldType",
+      "description": "Whether a label field is rendered as a pictogram or plain text",
+      "type": "string",
+      "enum": ["pictogram", "text"]
+    },
+
+    "IncludeOnLabel": {
+      "title": "IncludeOnLabel",
+      "description": "Per-field toggle map controlling which fields appear on the printed sticker. A missing key or true means included; false means excluded.",
+      "type": "object",
+      "properties": {
+        "timeOfDay":   { "type": "boolean" },
+        "dosage":      { "type": "boolean" },
+        "howToTake":   { "type": "boolean" },
+        "sideEffects": { "type": "boolean" },
+        "howLong":     { "type": "boolean" },
+        "others":      { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+
+    "OptionSelection": {
+      "title": "OptionSelection",
+      "description": "A single-select pictogram choice: which option and which style variant was chosen",
+      "type": "object",
+      "required": ["optionId", "variantId"],
+      "properties": {
+        "optionId": {
+          "type": "string",
+          "description": "ID of the selected PictogramOption (e.g. 'crush', 'drowsiness', 'with-food')"
+        },
+        "variantId": {
+          "type": "string",
+          "enum": ["v0", "v1", "v2"],
+          "description": "Style variant index — v0 is the default"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "TimeSelections": {
+      "title": "TimeSelections",
+      "description": "Multi-select time-of-day map. Keys are TIME_OPTIONS ids; values are chosen variant ids.",
+      "type": "object",
+      "propertyNames": {
+        "enum": ["morning", "noon", "night", "before-bed"]
+      },
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["v0", "v1", "v2"]
+      },
+      "examples": [
+        { "morning": "v0" },
+        { "morning": "v1", "night": "v0" },
+        { "morning": "v0", "noon": "v2", "before-bed": "v0" }
+      ]
+    },
+
+    "PictogramVariant": {
+      "title": "PictogramVariant",
+      "description": "One visual style option for a pictogram (SVG icon factory — not serialisable, present in runtime only)",
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id":    { "type": "string", "enum": ["v0", "v1", "v2"] },
+        "label": { "type": "string", "description": "Human-readable style name, e.g. 'Rising sun'" }
+      },
+      "additionalProperties": false
+    },
+
+    "PictogramOption": {
+      "title": "PictogramOption",
+      "description": "One selectable option within a pictogram category, containing 3 style variants",
+      "type": "object",
+      "required": ["id", "label", "variants"],
+      "properties": {
+        "id":    { "type": "string" },
+        "label": { "type": "string" },
+        "variants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PictogramVariant" },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "TimeOptionId": {
+      "title": "TimeOptionId",
+      "type": "string",
+      "enum": ["morning", "noon", "night", "before-bed"]
+    },
+
+    "HowToTakeOptionId": {
+      "title": "HowToTakeOptionId",
+      "type": "string",
+      "enum": ["with-food", "empty-stomach", "crush", "with-water"]
+    },
+
+    "SideEffectOptionId": {
+      "title": "SideEffectOptionId",
+      "type": "string",
+      "enum": ["drowsiness", "dizzy", "nausea", "none"]
+    },
+
+    "PillCount": {
+      "title": "PillCount",
+      "description": "Number of pills per dose, selected via dropdown. Drives repeated pill pictograms on the sticker.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+
+    "OCRExtractedData": {
+      "title": "OCRExtractedData",
+      "description": "Raw text extracted by OCR from the scanned medicine label, before user confirmation",
+      "type": "object",
+      "properties": {
+        "timeOfDay":   { "type": "string", "description": "e.g. 'Morning + Night'" },
+        "howLong":     { "type": "string", "description": "e.g. '2 weeks'" },
+        "dosage":      { "type": "string", "description": "e.g. '3 pills each time'. Parsed into pillCount on Screen 4." },
+        "howToTake":   { "type": "string", "description": "e.g. 'Crush pill'" },
+        "sideEffects": { "type": "string", "description": "e.g. 'Drowsiness'" },
+        "others":      { "type": "string", "description": "Meaningful residual text not classified above" }
+      },
+      "additionalProperties": false
+    },
+
+    "ConfirmInformationState": {
+      "title": "ConfirmInformationState",
+      "description": "Navigation state passed from Screen 2 (Confirm Information) → Screen 3 (Language Selection)",
+      "type": "object",
+      "required": ["includeOnLabel"],
+      "properties": {
+        "timeOfDay":      { "type": "string" },
+        "howLong":        { "type": "string" },
+        "dosage":         { "type": "string" },
+        "howToTake":      { "type": "string" },
+        "sideEffects":    { "type": "string" },
+        "others":         { "type": "string" },
+        "includeOnLabel": { "$ref": "#/$defs/IncludeOnLabel" }
+      },
+      "additionalProperties": false
+    },
+
+    "LanguageSelectionState": {
+      "title": "LanguageSelectionState",
+      "description": "Navigation state passed from Screen 3 (Language Selection) → Screen 4 (Configure Label). Extends ConfirmInformationState with chosen language.",
+      "allOf": [{ "$ref": "#/$defs/ConfirmInformationState" }],
+      "properties": {
+        "language": { "$ref": "#/$defs/Language" }
+      },
+      "required": ["language"]
+    },
+
+    "ConfigureLabelState": {
+      "title": "ConfigureLabelState",
+      "description": "Navigation state passed from Screen 4 (Configure Label / Preview & Alternatives) → Screen 5 (Print Preview)",
+      "type": "object",
+      "required": ["timeSelections", "pillCount", "howToTakeSelection", "sideEffectSelection", "language", "includeOnLabel"],
+      "properties": {
+        "timeSelections":      { "$ref": "#/$defs/TimeSelections" },
+        "pillCount":           { "$ref": "#/$defs/PillCount" },
+        "howToTakeSelection":  { "$ref": "#/$defs/OptionSelection" },
+        "sideEffectSelection": { "$ref": "#/$defs/OptionSelection" },
+        "language":            { "$ref": "#/$defs/Language" },
+        "howLong":             { "type": "string" },
+        "others":              { "type": "string" },
+        "includeOnLabel":      { "$ref": "#/$defs/IncludeOnLabel" }
+      },
+      "additionalProperties": false
+    },
+
+    "MedicationDosage": {
+      "title": "MedicationDosage",
+      "type": "object",
+      "required": ["amount", "unit"],
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "unit":   { "type": "string", "examples": ["tablet", "tablets", "capsule", "capsules", "ml"] }
+      },
+      "additionalProperties": false
+    },
+
+    "MedicationTiming": {
+      "title": "MedicationTiming",
+      "description": "Legacy timing flags on stored MedicationRecord (separate from pictogram TimeSelections)",
+      "type": "object",
+      "required": ["morning", "noon", "night"],
+      "properties": {
+        "morning": { "type": "boolean" },
+        "noon":    { "type": "boolean" },
+        "night":   { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+
+    "MedicationRecord": {
+      "title": "MedicationRecord",
+      "description": "Stored scan history record displayed on the Dashboard (Screen 1)",
+      "type": "object",
+      "required": ["id", "name", "dosage", "timing", "withFood", "instructions", "scannedAt"],
+      "properties": {
+        "id":           { "type": "string" },
+        "name":         { "type": "string", "description": "Medicine name extracted from label" },
+        "dosage":       { "$ref": "#/$defs/MedicationDosage" },
+        "timing":       { "$ref": "#/$defs/MedicationTiming" },
+        "withFood":     {
+          "oneOf": [{ "type": "boolean" }, { "type": "null" }],
+          "description": "true = with food, false = without food, null = no instruction given"
+        },
+        "instructions": { "type": "string", "description": "Full raw instruction text from label" },
+        "scannedAt":    { "type": "string", "format": "date-time", "description": "ISO 8601 timestamp" },
+        "imageUrl":     { "type": "string", "format": "uri", "description": "Optional captured label image URL" }
+      },
+      "additionalProperties": false
+    },
+
+    "DosageStatus": {
+      "title": "DosageStatus",
+      "description": "Tracks whether a scheduled dose has been taken",
+      "type": "object",
+      "required": ["medicationId", "time", "taken", "scheduledTime"],
+      "properties": {
+        "medicationId":  { "type": "string" },
+        "time":          { "type": "string", "enum": ["morning", "noon", "night"] },
+        "taken":         { "type": "boolean" },
+        "scheduledTime": { "type": "string", "description": "HH:MM 24-hour string, e.g. '09:00'" }
+      },
+      "additionalProperties": false
+    },
+
+    "FieldDefinition": {
+      "title": "FieldDefinition",
+      "description": "Definition of a single form field shown on Screen 2 (Confirm Information)",
+      "type": "object",
+      "required": ["key", "label", "placeholder", "type", "defaultValue"],
+      "properties": {
+        "key":          {
+          "type": "string",
+          "enum": ["timeOfDay", "howLong", "dosage", "howToTake", "sideEffects", "others"]
+        },
+        "label":        { "type": "string" },
+        "placeholder":  { "type": "string" },
+        "type":         { "$ref": "#/$defs/FieldType" },
+        "defaultValue": { "type": "string" },
+        "description":  { "type": "string", "description": "Optional helper text shown below the field" }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "type": "object",
+  "title": "GoldLabel Root",
+  "description": "Top-level schema referencing all major types in the app",
+  "properties": {
+    "medicationRecords": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/MedicationRecord" }
+    },
+    "dosageStatuses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/DosageStatus" }
+    },
+    "currentScan": {
+      "description": "In-flight scan being processed through the 5-screen flow",
+      "type": "object",
+      "properties": {
+        "ocrExtracted":    { "$ref": "#/$defs/OCRExtractedData" },
+        "confirmed":       { "$ref": "#/$defs/ConfirmInformationState" },
+        "withLanguage":    { "$ref": "#/$defs/LanguageSelectionState" },
+        "labelConfig":     { "$ref": "#/$defs/ConfigureLabelState" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

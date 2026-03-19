@@ -84,8 +84,8 @@ export function PrintPreview() {
   }
 
   const handlePrint = () => {
-    alert("Printing label…\n\nIn production, this would connect to a label printer or generate a PDF.");
-    navigate("/");
+    // In production: trigger label printer / PDF generation
+    navigate("/feedback");
   };
 
   return (

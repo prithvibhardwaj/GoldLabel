@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 export type IconFactory = (size: number) => JSX.Element;
 
 export interface PictogramVariant {

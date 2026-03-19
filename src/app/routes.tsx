@@ -8,6 +8,7 @@ import { ConfigureLabel } from "./components/ConfigureLabel";
 import { PrintPreview } from "./components/PrintPreview";
 import { ConfirmInformation } from "./components/ConfirmInformation";
 import { LanguageSelection } from "./components/LanguageSelection";
+import { FeedbackPage } from "./components/FeedbackPage";
 
 export const router = createBrowserRouter([
   {
@@ -45,5 +46,9 @@ export const router = createBrowserRouter([
   {
     path: "/history",
     Component: HistoryView,
+  },
+  {
+    path: "/feedback",
+    Component: FeedbackPage,
   },
 ]);
