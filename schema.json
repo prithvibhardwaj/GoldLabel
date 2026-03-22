@@ -27,6 +27,13 @@
       "enum": ["pictogram", "text"]
     },
 
+    "LabelFormat": {
+      "title": "LabelFormat",
+      "description": "Sticker layout preset chosen on Screen 4 (Preview & Alternatives); passed through to print preview",
+      "type": "string",
+      "enum": ["box", "bottle", "ziplock"]
+    },
+
     "IncludeOnLabel": {
       "title": "IncludeOnLabel",
       "description": "Per-field toggle map controlling which fields appear on the printed sticker. A missing key or true means included; false means excluded.",
@@ -170,18 +177,24 @@
     "LanguageSelectionState": {
       "title": "LanguageSelectionState",
       "description": "Navigation state passed from Screen 3 (Language Selection) → Screen 4 (Configure Label). Extends ConfirmInformationState with chosen language.",
-      "allOf": [{ "$ref": "#/$defs/ConfirmInformationState" }],
-      "properties": {
-        "language": { "$ref": "#/$defs/Language" }
-      },
-      "required": ["language"]
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/ConfirmInformationState" },
+        {
+          "type": "object",
+          "properties": {
+            "language": { "$ref": "#/$defs/Language" }
+          },
+          "required": ["language"]
+        }
+      ]
     },
 
     "ConfigureLabelState": {
       "title": "ConfigureLabelState",
       "description": "Navigation state passed from Screen 4 (Configure Label / Preview & Alternatives) → Screen 5 (Print Preview)",
       "type": "object",
-      "required": ["timeSelections", "pillCount", "howToTakeSelection", "sideEffectSelection", "language", "includeOnLabel"],
+      "required": ["timeSelections", "pillCount", "howToTakeSelection", "sideEffectSelection", "language", "includeOnLabel", "labelFormat"],
       "properties": {
         "timeSelections":      { "$ref": "#/$defs/TimeSelections" },
         "pillCount":           { "$ref": "#/$defs/PillCount" },
@@ -190,7 +203,8 @@
         "language":            { "$ref": "#/$defs/Language" },
         "howLong":             { "type": "string" },
         "others":              { "type": "string" },
-        "includeOnLabel":      { "$ref": "#/$defs/IncludeOnLabel" }
+        "includeOnLabel":      { "$ref": "#/$defs/IncludeOnLabel" },
+        "labelFormat":         { "$ref": "#/$defs/LabelFormat" }
       },
       "additionalProperties": false
     },
@@ -293,7 +307,8 @@
         "ocrExtracted":    { "$ref": "#/$defs/OCRExtractedData" },
         "confirmed":       { "$ref": "#/$defs/ConfirmInformationState" },
         "withLanguage":    { "$ref": "#/$defs/LanguageSelectionState" },
-        "labelConfig":     { "$ref": "#/$defs/ConfigureLabelState" }
+        "labelConfig":     { "$ref": "#/$defs/ConfigureLabelState", "description": "Screen 4 → 5 handoff (includes labelFormat)" },
+        "printPreview":    { "$ref": "#/$defs/ConfigureLabelState", "description": "Optional snapshot when on Screen 5 (same shape as labelConfig)" }
       },
       "additionalProperties": false
     }
